@@ -1,0 +1,109 @@
+---
+title: "SARS-CoV-2 Covid-19 Monitoring"
+author: "KRISP Team"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: false
+    number_sections: true
+    theme: united
+    code_folding: hide
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+## Load packages
+library(kableExtra)
+library(readr)
+library(dplyr)
+library(DBI)
+library(sqldf)
+library(readxl)
+
+knitr::opts_chunk$set(fig.width=8,
+                      fig.height=6,
+                      fig.path="figures/",
+                      dev='pdf',
+                      warning=FALSE,
+                      message=FALSE,
+                      echo = TRUE,
+                      include = TRUE
+                      )
+options(scipen=10000) ##Penalty for scientific notation
+```
+
+# Introduction
+Weekly summary of SA COVID-19 genomic data.
+
+## Table of Variants.
+VOC - variants of concern, VUI - variant under investigation
+
+
+### South Africa
+
+```{r eval=FALSE, include=FALSE}
+message("Tables in DB")
+dbListTables(con)
+
+message("Fields in variant table")
+dbListFields(con, "tbl_metadata_variants")
+
+head(dbReadTable(con, "tbl_metadata_variants"))
+```
+```{r}
+## import PHE/PHA variants file
+variants <- read_delim("variants.tsv", "\t",escape_double = FALSE, trim_ws = TRUE)
+
+con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
+variant_summary <- dbFetch(dbSendQuery(con, 'SELECT 
+                            * 
+                            FROM 
+                    (SELECT variant as name, count(variant) as "number of cases", min(date) as "first case" FROM tbl_metadata_variants GROUP BY name) as a  LEFT JOIN 
+                    (SELECT variant as name, COUNT(variant) as "new cases in last 1 month" FROM tbl_metadata_variants  WHERE date_submitted >= week GROUP BY name) as b ON a.name = b.name'))
+dbDisconnect(con)
+
+variant_summary <- variant_summary[, -4] 
+variant_summary <- variant_summary %>% left_join(variants, by = "name" )
+
+variant_summary[is.na(variant_summary$`new cases in last 1 month`), "new cases in last 1 month"] <- 0
+variant_summary <- variant_summary[,c("name", "other_name", "variant_lineages" ,"first case", "number of cases", "new cases in last 1 month")]
+names(variant_summary) <- c("Variant", "Other names by which this variant may be known", "Lineage/sub-lineages" ,"Date of first case", "Total confirmed (sequences at GISAID)", "New cases in last 1 month")
+
+variant_summary %>% 
+      kbl() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+```
+
+
+### Africa
+
+```{r}
+# Africa_all_data_15September
+## import PHE/PHA variants file
+variants <- read_delim("variants_Africa.tsv", "\t",escape_double = FALSE, trim_ws = TRUE)
+
+con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
+variant_summary <- dbFetch(dbSendQuery(con, 'SELECT 
+                            * 
+                            FROM 
+                    (SELECT variant as name, count(variant) as "number of cases", min(date) as "first case" FROM tbl_metadata_Africa GROUP BY name) as a  LEFT JOIN 
+                    (SELECT variant as name, COUNT(variant) as "new cases in last 1 month" FROM tbl_metadata_Africa  WHERE date_submitted >= week GROUP BY name) as b ON a.name = b.name'))
+
+dbDisconnect(con)
+
+variant_summary <- variant_summary[, -4] 
+variant_summary <- variant_summary %>% left_join(variants, by = "name" )
+
+variant_summary[is.na(variant_summary$`new cases in last 1 month`), "new cases in last 1 month"] <- 0
+variant_summary <- variant_summary[,c("name", "other_name", "variant_lineages" ,"first case", "number of cases", "new cases in last 1 month")]
+names(variant_summary) <- c("Variant", "Other names by which this variant may be known", "Lineage/sub-lineages" ,"Date of first case", "Total confirmed (sequences at GISAID)", "New cases in last 7 days")
+
+variant_summary %>% 
+      kbl() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+writexl::write_xlsx(variant_summary, "Africa_weekly_variant_summary.xlsx")
+
+```
+

@@ -96,26 +96,34 @@ dbDisconnect(con)
 ## Africa variants
 variants_Africa <- read_delim("variants_Africa.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
 
-Africa_df <- read_excel("Africa_all_data_15September_gooddates.xlsx")
-Africa_df <- Africa_df %>% mutate( variant = Nextstrain_clade,
-                                   variant = ifelse(pango_lineage == "A.23.1", "VUI-202102/01", variant),
-                                   variant = ifelse(pango_lineage == "B.1.1.318", "VUI-21FEB-04", variant),
-                                   variant = ifelse(pango_lineage == "C.1", "VUI-21MAY-02", variant),
-                                   variant = ifelse(pango_lineage == "B.1.1.7", "Alpha", variant),
+#Africa_df <- read_excel("Africa_all_data_15September_gooddates.xlsx")
+Africa_df <- read_excel("Africa_all_data_30September2021.xlsx")
+
+sadc_countries <- c("Angola", "Botswana", "Democratic Republic of the Congo", "Eswatini", "Lesotho", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Namibia", "South Africa", "Union of the Comoros", "Zambia", "Zimbabwe")
+
+Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
+                                   variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
+                                   variant = ifelse(pango_lineage == "B.1.1.318", "B.1.1.318", variant),
+                                   variant = ifelse(pango_lineage == "C.1", "C.1", variant),
+                                   variant = ifelse(Nextstrain_clade == "20I (Alpha, V1)", "Alpha", variant),
                                    variant = ifelse(Nextstrain_clade == "20H (Beta, V2)", "Beta", variant),
-                                   variant = ifelse(Nextstrain_clade == "21A (Delta)", "Delta+", variant),
-                                   variant = ifelse(pango_lineage == "C.1.2", "VUI-26JUN-01", variant),
+                                   variant = ifelse(Nextstrain_clade == "21A (Delta)", "Delta", variant),
+                                   variant = ifelse(pango_lineage == "C.1.2", "C.1.2", variant),
                                    variant = ifelse(Nextstrain_clade == "21D (Eta)", "Eta", variant),
-                                   variant = ifelse(pango_lineage == "A.23.1", "VUI-21OCT-01", variant),
-                                   variant = ifelse(pango_lineage == "C.36.3", "VUI-16SEP-01", variant),
-                                   week = (Sys.Date() - 7))
+                                   variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
+                                   variant = ifelse(pango_lineage == "C.36.3", "C.36.3", variant),
+                                   week = (Sys.Date() - 7),
+                                   month = (Sys.Date() - 30),
+                                   sadac = ifelse(country %in% sadc_countries, 1, 0))
+
 
 Africa_df <- Africa_df %>% filter(variant %in% variants_Africa$name) %>% 
-  select("strain", "date", week, date_submitted, Nextstrain_clade, pango_lineage, variant)
+  select("strain", "date", week, month, date_submitted, Nextstrain_clade, pango_lineage, variant, country, sadac)
 
 Africa_df$date <- as.character(Africa_df$date)
 Africa_df$date_submitted <- as.character(Africa_df$date_submitted)
 Africa_df$week <- as.character(Africa_df$week)
+Africa_df$month <- as.character(Africa_df$month)
 
 con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
 dbWriteTable(con, "tbl_metadata_Africa", Africa_df, overwrite = T)

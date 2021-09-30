@@ -35,7 +35,7 @@ options(scipen=10000) ##Penalty for scientific notation
 ```
 
 # Introduction
-Weekly summary of SA COVID-19 genomic data.
+Summary of Africa COVID-19 genomic data.
 
 ## Table of Variants.
 VOC - variants of concern, VUI - variant under investigation
@@ -52,7 +52,8 @@ dbListFields(con, "tbl_metadata_variants")
 
 head(dbReadTable(con, "tbl_metadata_variants"))
 ```
-```{r}
+
+```{r eval=FALSE, include=FALSE}
 ## import PHE/PHA variants file
 variants <- read_delim("variants.tsv", "\t",escape_double = FALSE, trim_ws = TRUE)
 
@@ -85,25 +86,61 @@ variant_summary %>%
 variants <- read_delim("variants_Africa.tsv", "\t",escape_double = FALSE, trim_ws = TRUE)
 
 con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
-variant_summary <- dbFetch(dbSendQuery(con, 'SELECT 
+variant_summary <- 
+dbFetch(dbSendQuery(con, 'SELECT 
                             * 
                             FROM 
-                    (SELECT variant as name, count(variant) as "number of cases", min(date) as "first case" FROM tbl_metadata_Africa GROUP BY name) as a  LEFT JOIN 
-                    (SELECT variant as name, COUNT(variant) as "new cases in last 1 month" FROM tbl_metadata_Africa  WHERE date_submitted >= week GROUP BY name) as b ON a.name = b.name'))
+(SELECT variant as name, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa GROUP BY name) as a  LEFT JOIN 
+(SELECT variant as name, COUNT(variant) as "new sequences in the last 30 days" FROM tbl_metadata_Africa  WHERE date >= month GROUP BY name) as b ON a.name = b.name'))
 
 dbDisconnect(con)
 
-variant_summary <- variant_summary[, -4] 
+variant_summary <- variant_summary[, -6] 
 variant_summary <- variant_summary %>% left_join(variants, by = "name" )
 
-variant_summary[is.na(variant_summary$`new cases in last 1 month`), "new cases in last 1 month"] <- 0
-variant_summary <- variant_summary[,c("name", "other_name", "variant_lineages" ,"first case", "number of cases", "new cases in last 1 month")]
-names(variant_summary) <- c("Variant", "Other names by which this variant may be known", "Lineage/sub-lineages" ,"Date of first case", "Total confirmed (sequences at GISAID)", "New cases in last 7 days")
+variant_summary[is.na(variant_summary$`new sequences in the last 30 days`), "new sequences in the last 30 days"] <- 0
+variant_summary <- variant_summary %>% select("name", "other_name", "variant_lineages","number of sequences","new sequences in the last 30 days", "date of first sequence","date of last sequence", "No of days since last sampling")
+names(variant_summary) <- c("Variant (VOC,VOI,VUM)", "Other names by which this variant may be known", "Lineage/sub-lineages","Number of sequences","Sequences submitted in the last 30 days", "date of first sequence","date of last sequence", "No of days since last sampling")
+  
+ 
 
 variant_summary %>% 
       kbl() %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
 writexl::write_xlsx(variant_summary, "Africa_weekly_variant_summary.xlsx")
+
+```
+
+
+## Beta in SADAC
+
+```{r}
+# Africa_all_data_30September
+
+con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
+beta_sadac_summary <- dbFetch(dbSendQuery(con, 'SELECT 
+                            * 
+                          FROM 
+(SELECT country, variant, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa WHERE sadac == 1 AND variant == "Beta"  GROUP BY variant, country) as a  LEFT JOIN 
+(SELECT country, variant,  COUNT(variant) as "new sequences in the last 30 days" FROM tbl_metadata_Africa  WHERE date >= month AND sadac == 1 AND variant == "Beta"  GROUP BY variant, country) as b ON a.variant = b.variant'))
+
+dbDisconnect(con)
+
+beta_sadac_summary <- beta_sadac_summary[, -c(7,8)] 
+#beta_sadac_summary <- beta_sadac_summary %>% left_join(variants, by = "name" )
+
+beta_sadac_summary[is.na(beta_sadac_summary$`new sequences in the last 30 days`), "new sequences in the last 30 days"] <- 0
+
+cn_new_seq_dates <- paste0("New sequences in the last 30 days (data up to",Sys.Date(),")")
+names(beta_sadac_summary) <- c("Country", "Variant", "Number of sequences", "Date of first sequence", "Date of last sequence", "No of days since last sampling", cn_new_seq_dates)
+  
+ 
+
+beta_sadac_summary %>% 
+      kbl() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+writexl::write_xlsx(beta_sadac_summary, "africa_beta_sadac_summary.xlsx")
 
 ```
 
