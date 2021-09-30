@@ -11,7 +11,7 @@
 
 <meta name="author" content="KRISP Team" />
 
-<meta name="date" content="2021-09-30" />
+<meta name="date" content="2021-10-01" />
 
 <title>SARS-CoV-2 Covid-19 Monitoring</title>
 
@@ -181,7 +181,7 @@ pre code {
 
 <h1 class="title toc-ignore">SARS-CoV-2 Covid-19 Monitoring</h1>
 <h4 class="author">KRISP Team</h4>
-<h4 class="date">September 30, 2021</h4>
+<h4 class="date">October 01, 2021</h4>
 
 </div>
 
@@ -197,7 +197,7 @@ pre code {
 
 <div id="introduction" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Introduction</h1>
-<p>Weekly summary of SA COVID-19 genomic data.</p>
+<p>Summary of Africa COVID-19 genomic data.</p>
 <div id="table-of-variants." class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Table of Variants.</h2>
 <p>VOC - variants of concern, VUI - variant under investigation</p>
@@ -322,22 +322,22 @@ B.1.1.318
 VUM-2021-06-04
 </td>
 <td style="text-align:left;">
-B.1.1.318
+B.1.1.318, AZ.1, AZ.2, AZ.5
 </td>
 <td style="text-align:right;">
-465
+668
 </td>
 <td style="text-align:right;">
 0
 </td>
 <td style="text-align:left;">
-2021-01-07
+2021-01-06
 </td>
 <td style="text-align:left;">
-2021-08-06
+2021-08-11
 </td>
 <td style="text-align:right;">
-55
+50
 </td>
 </tr>
 <tr>
@@ -458,7 +458,7 @@ B.1.617.2, AY.1, AY.3, AY.4, AY.5, AY.6, AY.7.1, AY.10, AY.11, AY.12, AY.13, AY.
 12401
 </td>
 <td style="text-align:right;">
-457
+422
 </td>
 <td style="text-align:left;">
 2020-09-16
@@ -518,7 +518,6 @@ beta_sadac_summary &lt;- beta_sadac_summary[, -c(7,8)]
 #beta_sadac_summary &lt;- beta_sadac_summary %&gt;% left_join(variants, by = &quot;name&quot; )
 
 beta_sadac_summary[is.na(beta_sadac_summary$`new sequences in the last 30 days`), &quot;new sequences in the last 30 days&quot;] &lt;- 0
-#beta_sadac_summary &lt;- beta_sadac_summary %&gt;% select(&quot;name&quot;, &quot;other_name&quot;, &quot;variant_lineages&quot;,&quot;number of sequences&quot;,&quot;new sequences in the last 30 days&quot;, &quot;date of first sequence&quot;,&quot;date of #last sequence&quot;, &quot;No of days since last sampling&quot;)
 
 cn_new_seq_dates &lt;- paste0(&quot;New sequences in the last 30 days (data up to&quot;,Sys.Date(),&quot;)&quot;)
 names(beta_sadac_summary) &lt;- c(&quot;Country&quot;, &quot;Variant&quot;, &quot;Number of sequences&quot;, &quot;Date of first sequence&quot;, &quot;Date of last sequence&quot;, &quot;No of days since last sampling&quot;, cn_new_seq_dates)
@@ -550,7 +549,7 @@ Date of last sequence
 No of days since last sampling
 </th>
 <th style="text-align:right;">
-New sequences in the last 30 days (data up to2021-09-30)
+New sequences in the last 30 days (data up to2021-10-01)
 </th>
 </tr>
 </thead>

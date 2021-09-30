@@ -5,6 +5,8 @@ library(readr)
 library(dplyr)
 library(DBI)
 library(sqldf)
+library(data.table)
+library(tidyr)
 
 ## Import nextclade
 sa_nextclade_210731 <- read_delim("~/temp/Collaborations/covid/wave3_data/SA_gisaid/sa_gisaid_auspice_input_hcov-19_2021_03_01-2021-07-31/sa.sequences-nextclade.200330-210731.tsv", 
@@ -103,7 +105,7 @@ sadc_countries <- c("Angola", "Botswana", "Democratic Republic of the Congo", "E
 
 Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
                                    variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
-                                   variant = ifelse(pango_lineage == "B.1.1.318", "B.1.1.318", variant),
+                                   variant = ifelse(pango_lineage == "B.1.1.318" | pango_lineage %like% "AZ", "B.1.1.318", variant),
                                    variant = ifelse(pango_lineage == "C.1", "C.1", variant),
                                    variant = ifelse(Nextstrain_clade == "20I (Alpha, V1)", "Alpha", variant),
                                    variant = ifelse(Nextstrain_clade == "20H (Beta, V2)", "Beta", variant),
