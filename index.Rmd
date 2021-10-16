@@ -90,18 +90,22 @@ variant_summary <-
 dbFetch(dbSendQuery(con, 'SELECT 
                             * 
                             FROM 
-(SELECT variant as name, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa GROUP BY name) as a  LEFT JOIN 
-(SELECT variant as name, COUNT(variant) as "new sequences in the last 30 days" FROM tbl_metadata_Africa  WHERE date >= month GROUP BY name) as b ON a.name = b.name'))
-
+(SELECT variant as name, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa GROUP BY name) as a  
+LEFT JOIN 
+(SELECT variant as name, COUNT(variant) as "new sequences submitted in the last 30 days" FROM tbl_metadata_Africa  WHERE date_submitted >= month GROUP BY name) as b 
+ON a.name = b.name LEFT JOIN 
+(SELECT variant as name, COUNT(variant) as "new sequences sampled and submitted in the last 30 days" FROM tbl_metadata_Africa  WHERE date_submitted >= month AND date >= month GROUP BY name) as c on a.name = c.name'))
 dbDisconnect(con)
 
-variant_summary <- variant_summary[, -6] 
+variant_summary <- variant_summary[, -c(6,8)] 
 variant_summary <- variant_summary %>% left_join(variants, by = "name" )
 
 variant_summary[is.na(variant_summary$`new sequences in the last 30 days`), "new sequences in the last 30 days"] <- 0
-variant_summary <- variant_summary %>% select("name", "other_name", "variant_lineages","number of sequences","new sequences in the last 30 days", "date of first sequence","date of last sequence", "No of days since last sampling")
-names(variant_summary) <- c("Variant (VOC,VOI,VUM)", "Other names by which this variant may be known", "Lineage/sub-lineages","Number of sequences","Sequences submitted in the last 30 days", "date of first sequence","date of last sequence", "No of days since last sampling")
-  
+variant_summary <- variant_summary %>% select("name", "other_name", "variant_lineages","number of sequences","new sequences submitted in the last 30 days","new sequences sampled and submitted in the last 30 days", "date of first sequence","date of last sequence", "No of days since last sampling")
+names(variant_summary) <- c("Variant (VOC,VOI,VUM)", "Other names by which this variant may be known", "Lineage/sub-lineages","Number of sequences","Sequences submitted in the last 30 days (data up to 2021-10-14)", "new sequences sampled and submitted in the last 30 days (data up to 2021-10-14)", "date of first sequence","date of last sequence", "No of days since last sampling")
+my_order <- c("Alpha", "Beta", "Delta", "B.1.1.318", "C.1", "C.1.2","C.36.3", "Eta")
+variant_summary <- variant_summary %>% 
+    arrange(factor(`Variant (VOC,VOI,VUM)`, levels = my_order))  
  
 
 variant_summary %>% 
@@ -121,8 +125,10 @@ con <- dbConnect(RSQLite::SQLite(), "dashboardDB")
 beta_sadac_summary <- dbFetch(dbSendQuery(con, 'SELECT 
                             * 
                           FROM 
-(SELECT country, variant, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa WHERE sadac == 1 AND variant == "Beta"  GROUP BY variant, country) as a  LEFT JOIN 
-(SELECT country, variant,  COUNT(variant) as "new sequences in the last 30 days" FROM tbl_metadata_Africa  WHERE date >= month AND sadac == 1 AND variant == "Beta"  GROUP BY variant, country) as b ON a.variant = b.variant'))
+(SELECT country, variant, count(variant) as "number of sequences", min(date) as "date of first sequence", max(date) as "date of last sequence", Cast ((JulianDay() - JulianDay(max(date))) As Integer) AS "No of days since last sampling" FROM tbl_metadata_Africa WHERE sadac == 1 AND variant == "Beta"  GROUP BY variant, country) as a  
+LEFT JOIN 
+(SELECT country, variant,  COUNT(variant) as "new sequences submitted in the last 30 days" FROM tbl_metadata_Africa  WHERE date_submitted >= month AND sadac == 1 AND variant == "Beta"  GROUP BY country, variant) as b 
+ON a.variant = b.variant'))
 
 dbDisconnect(con)
 
@@ -141,6 +147,9 @@ beta_sadac_summary %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
 
 writexl::write_xlsx(beta_sadac_summary, "africa_beta_sadac_summary.xlsx")
+
+```
+```{r}
 
 ```
 

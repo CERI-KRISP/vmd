@@ -7,6 +7,8 @@ library(DBI)
 library(sqldf)
 library(data.table)
 library(tidyr)
+library(writexl)
+library(readxl)
 
 ## Import nextclade
 sa_nextclade_210731 <- read_delim("~/temp/Collaborations/covid/wave3_data/SA_gisaid/sa_gisaid_auspice_input_hcov-19_2021_03_01-2021-07-31/sa.sequences-nextclade.200330-210731.tsv", 
@@ -43,6 +45,16 @@ sa_metadata_210801_210831 <- read_delim("~/temp/Collaborations/covid/wave3_data/
                                         "\t", escape_double = FALSE, trim_ws = TRUE)
 sa_metadata <- rbind(sa_metadata_200301_210228, sa_metadata_210301_210615, sa_metadata_210616_210731, sa_metadata_210801_210831)
 
+## SA sanger sequences,
+sanger_sequenced <- read_delim("~/temp/Collaborations/covid/wave3_data/SA_gisaid/sa_gisaid_auspice_input_hcov-19_2021_03_01-2021-07-31/sanger_sequenced.tsv", 
+                               "\t", escape_double = FALSE, trim_ws = TRUE)
+sanger_sequenced <- sanger_sequenced %>% mutate(
+  coverage = round(((29903-as.numeric(totalMissing))/29903)*100,0)
+)
+write_xlsx(sanger_sequenced, "../assembly_auto/merge_sanger/manuscript/submission/Table S3.xlsx")
+
+sa_metadata_sanger <- sa_metadata %>% filter(strain %in% sanger_sequenced$seqName)
+write_xlsx(sa_metadata_sanger, "../assembly_auto/merge_sanger/manuscript/submission/Table S2.xlsx")
 
 ### Master table
 sa_metadata <- sa_metadata %>% left_join(df_nc_clades, by = c("strain"="seqName"))
@@ -99,7 +111,7 @@ dbDisconnect(con)
 variants_Africa <- read_delim("variants_Africa.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
 
 #Africa_df <- read_excel("Africa_all_data_15September_gooddates.xlsx")
-Africa_df <- read_excel("Africa_all_data_30September2021.xlsx")
+Africa_df <- read_excel("Africa_all_data_14October2021.xlsx")
 
 sadc_countries <- c("Angola", "Botswana", "Democratic Republic of the Congo", "Eswatini", "Lesotho", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Namibia", "South Africa", "Union of the Comoros", "Zambia", "Zimbabwe")
 
@@ -114,8 +126,10 @@ Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
                                    variant = ifelse(Nextstrain_clade == "21D (Eta)", "Eta", variant),
                                    variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
                                    variant = ifelse(pango_lineage == "C.36.3", "C.36.3", variant),
-                                   week = (Sys.Date() - 7),
-                                   month = (Sys.Date() - 30),
+                                   #week = (Sys.Date() - 7),
+                                   week = (as.Date("2021-10-14") - 7),
+                                   #month = (Sys.Date() - 30),
+                                   month = (as.Date("2021-10-14") - 30),
                                    sadac = ifelse(country %in% sadc_countries, 1, 0))
 
 
