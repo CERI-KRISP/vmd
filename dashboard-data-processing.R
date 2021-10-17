@@ -113,7 +113,16 @@ variants_Africa <- read_delim("variants_Africa.tsv", "\t", escape_double = FALSE
 #Africa_df <- read_excel("Africa_all_data_15September_gooddates.xlsx")
 Africa_df <- read_excel("Africa_all_data_14October2021.xlsx")
 
-sadc_countries <- c("Angola", "Botswana", "Democratic Republic of the Congo", "Eswatini", "Lesotho", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Namibia", "South Africa", "Union of the Comoros", "Zambia", "Zimbabwe")
+Africa_df[Africa_df$country == "Côte d'Ivoire", "country"] <- "Cote d'Ivoire"
+
+south <- c("Angola", "Botswana", "Eswatini", "Lesotho", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Namibia", "South Africa", "Union of the Comoros", "Zambia", "Zimbabwe")
+east <- c('Kenya','Rwanda','Uganda', "Mauritius", "Reunion","Mayotte", "Ethiopia","Sudan",
+          "Burundi", "Eritrea", "Somalia","Tanzania", "Djibouti", "South Sudan", "Comoros","Seychelles")
+west <- c("Guinea","Ghana",'Cote d\'Ivoire','Burkina Faso','Benin',"Sierra Leone","Mali",'Senegal','Nigeria','Gambia', "Togo", 
+          "Guinea-Bissau", "Mauritania", "Niger", "Sao Tome and Principe","Cabo Verde", "Liberia","Canary Islands")
+north <- c('Algeria','Tunisia','Egypt','Morocco',"Libya")
+central<-c("Gabon",'Cameroon',"Republic of the Congo",'Democratic Republic of the Congo','Equatorial Guinea', 
+           "Central African Republic", "Chad" )
 
 Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
                                    variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
@@ -122,6 +131,8 @@ Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
                                    variant = ifelse(Nextstrain_clade == "20I (Alpha, V1)", "Alpha", variant),
                                    variant = ifelse(Nextstrain_clade == "20H (Beta, V2)", "Beta", variant),
                                    variant = ifelse(Nextstrain_clade == "21A (Delta)", "Delta", variant),
+                                   variant = ifelse(Nextstrain_clade == "21I (Delta)", "Delta", variant),
+                                   variant = ifelse(Nextstrain_clade == "21J (Delta)", "Delta", variant),
                                    variant = ifelse(pango_lineage == "C.1.2", "C.1.2", variant),
                                    variant = ifelse(Nextstrain_clade == "21D (Eta)", "Eta", variant),
                                    variant = ifelse(pango_lineage == "A.23.1", "A.23.1", variant),
@@ -130,11 +141,21 @@ Africa_df <- Africa_df %>% mutate(variant = Nextstrain_clade,
                                    week = (as.Date("2021-10-14") - 7),
                                    #month = (Sys.Date() - 30),
                                    month = (as.Date("2021-10-14") - 30),
-                                   sadac = ifelse(country %in% sadc_countries, 1, 0))
+                                   region = ifelse(country %in% south, "South", ifelse(
+                                     country %in% north, "North", ifelse(
+                                       country %in% east, "East", ifelse(
+                                         country %in% west, "West", ifelse(
+                                           country %in% central, "Central", "NA" 
+                                         )
+                                       )
+                                     )
+                                   )
+                                  )
+                                )
 
 
-Africa_df <- Africa_df %>% filter(variant %in% variants_Africa$name) %>% 
-  select("strain", "date", week, month, date_submitted, Nextstrain_clade, pango_lineage, variant, country, sadac)
+Africa_df <- Africa_df %>% 
+  select("strain", "date", week, month, date_submitted, Nextstrain_clade, pango_lineage, variant, country, region)
 
 Africa_df$date <- as.character(Africa_df$date)
 Africa_df$date_submitted <- as.character(Africa_df$date_submitted)
